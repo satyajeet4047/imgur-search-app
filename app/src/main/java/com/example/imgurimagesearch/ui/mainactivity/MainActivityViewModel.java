@@ -10,12 +10,17 @@ import com.example.imgurimagesearch.ui.base.BaseViewModel;
 import com.example.imgurimagesearch.util.Constants;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
+import io.reactivex.SingleSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Function;
+import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 
 
  /*
@@ -30,6 +35,8 @@ public class MainActivityViewModel extends BaseViewModel {
     private MutableLiveData<List<ImageDataResponse>> imageList;
     private MutableLiveData<Boolean> isLoading;
     private MutableLiveData<Constants.Result> result;
+
+    private PublishSubject<String> publisher = PublishSubject.create();
 
 
 
@@ -48,26 +55,34 @@ public class MainActivityViewModel extends BaseViewModel {
     public void SearchImages(String input) {
 
         setLoading(true);
-        ServiceApiManager serviceApiManager = mDataManager.getServiceApiManager();
-        DisposableSingleObserver<SearchResponse> observer = getSearchObserver();
+        final ServiceApiManager serviceApiManager = mDataManager.getServiceApiManager();
+        DisposableObserver<SearchResponse> observer = getSearchObserver();
         disposable.add(
-                serviceApiManager.getImages(input)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribeWith(observer));
+                publisher.debounce(250, TimeUnit.MILLISECONDS)
+                        .switchMapSingle(new Function<String, SingleSource<SearchResponse>>() {
+                    @Override
+                    public SingleSource<SearchResponse> apply(String s) throws Exception {
+                        return serviceApiManager.getImages(s)
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread());
+                    }
 
+                })
+                .subscribeWith(observer));
+        publisher.onNext(input);
     }
 
     /*
           Returns observer to get emitted result data
      */
 
-    private DisposableSingleObserver<SearchResponse> getSearchObserver() {
+    private DisposableObserver<SearchResponse> getSearchObserver() {
 
-        return  new DisposableSingleObserver<SearchResponse>() {
+        return  new DisposableObserver<SearchResponse>() {
 
             @Override
-            public void onSuccess(SearchResponse searchResponse) {
+            public void onNext(SearchResponse searchResponse) {
+
                 if(searchResponse.isSuccess()) {
                     if(searchResponse.getData().isEmpty()){
                         setResult(Constants.Result.EMPTY_RESULT);
@@ -79,11 +94,18 @@ public class MainActivityViewModel extends BaseViewModel {
                 }
                 setLoading(false);
 
+
             }
+
             @Override
             public void onError(Throwable e) {
                 setResult(Constants.Result.FAILURE);
                 setLoading(false);
+            }
+
+            @Override
+            public void onComplete() {
+
             }
         };
 
@@ -108,6 +130,10 @@ public class MainActivityViewModel extends BaseViewModel {
 
     private void setResult(Constants.Result state) {
         result.postValue(state);
+    }
+
+    public void clearSubscription(){
+        disposable.clear();
     }
 
 }
