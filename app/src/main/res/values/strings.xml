@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">MovieRatingExample</string>
+    <string name="btn_submit_text">submit</string>
+    <string name="comment_text">Add Comments Here</string>
+    <string name="no_comments_text">No comments</string>
+    <string name="search_success_text">Searched successfully</string>
+    <string name="search_failure_text">Failure while searching</string>
+    <string name="no_search_result_text">Failure while searching</string>
+    <string name="search_unknown_text">Unknown Exception while searching</string>
+</resources>
