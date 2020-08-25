@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MovieRatingExample</string>
+    <string name="app_name">ImgurSearch</string>
     <string name="btn_submit_text">submit</string>
     <string name="comment_text">Add Comments Here</string>
     <string name="no_comments_text">No comments</string>

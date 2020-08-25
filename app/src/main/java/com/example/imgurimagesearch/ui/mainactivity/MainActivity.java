@@ -28,18 +28,20 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.Unbinder;
 
 
-
- /*
-      Main launcher screen activity
- */
+/*
+     Main launcher screen activity
+*/
 public class MainActivity extends BaseActivity<MainActivityViewModel> implements  ImagesRecyclerViewAdapter.OnImageClickListener {
 
 
     @BindView(R.id.progressBar) ProgressBar mProgressBar;
     @BindView(R.id.recyclerView) RecyclerView mRecyclerView;
     @BindView(R.id.searchView) SearchView searchView;
+
+    private Unbinder mBinder;
 
 
     ImagesRecyclerViewAdapter adapter;
@@ -51,7 +53,7 @@ public class MainActivity extends BaseActivity<MainActivityViewModel> implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+        mBinder=ButterKnife.bind(this);
 
         //Initialize view for main activity such as search view
         initView();
@@ -64,7 +66,14 @@ public class MainActivity extends BaseActivity<MainActivityViewModel> implements
     }
 
 
-    @NonNull
+     @Override
+     protected void onDestroy() {
+         super.onDestroy();
+         mBinder.unbind();
+         viewModel.clearSubscription();
+     }
+
+     @NonNull
     @Override
     protected MainActivityViewModel createViewModel() {
         MainActivityViewModelFactory factory = new MainActivityViewModelFactory();
